@@ -5,6 +5,7 @@ import { Button, DatePicker, Flex, Form, Input, InputNumber, Select } from 'antd
 const App = () => {
 
   const [shipments, setShipments] = useState([]);
+  const [horses, setHorses] = useState([]);
   const [options, setOptions] = useState([
     {
       label: 'Choice 1',
@@ -55,25 +56,37 @@ const App = () => {
   };
 
   useEffect(() => {
-    const fetchRecords = async (reportName, criteria = null) => {
-      const query = new URLSearchParams({ reportName, ...(criteria && { criteria }) });
-      const response = await fetch(`/api/zoho?${query}`);
-      const result = await response.json();
-      if (result) {
-        const all_shipments = result.records.data.map(record => {
-          return {
-            label: record.Shipment,
-            value: record.Shipment
-          }
-
-        })
-        setShipments(all_shipments);
-      } else {
-        console.error(result.error);
-      }
-    };
-
-    fetchRecords("All_Shipments", null);
+    const init = async () => {
+      const fetchRecords = async (reportName, criteria = null) => {
+        const query = new URLSearchParams({ reportName, ...(criteria && { criteria }) });
+        const response = await fetch(`/api/zoho?${query}`);
+        const result = await response.json();
+        if (result) {
+          return result.records.data
+        } else {
+          console.error(result.error);
+          return []
+        }
+      };
+      const shipmentResponse = await  fetchRecords("All_Shipments", `(Approval_Status == "Approved")`);
+      const all_shipments = shipmentResponse.map(record => {
+        return {
+          label: record.Shipment,
+          value: record.Shipment
+        }
+      })
+      setShipments(all_shipments);
+      const horseResponse = await fetchRecords("All_Horse",`(Approval_Status == "Approved")`);
+      const all_horses = horseResponse.map(record => {
+        return{
+          label: record.Horse,
+          value: record.Horse
+        }
+      })
+      setHorses(all_horses);
+    }
+    init();
+   
   }, []);
 
 
@@ -146,7 +159,7 @@ const App = () => {
           <Flex gap={60}>
             <Form.Item label='Horse' className='w-[300px]'>
               <Select
-                options={options}
+                options={horses}
                 showSearch
                 allowClear
                 value={bookingObj.Horse}

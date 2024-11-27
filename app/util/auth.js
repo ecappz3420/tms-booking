@@ -27,15 +27,16 @@ export async function refreshAccessToken() {
     }
 }
 
-export async function getRecords(accessToken, reportName, criteria = null) {
+export async function getRecords(accessToken, reportName, criteria) {
     try {
-        const params = criteria ? { criteria: encodeURI(criteria) } : {};
+        const params = criteria ? {criteria} : {};
         const response = await axios.get(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/${reportName}`,{
             headers: {
                 Authorization: `Zoho-oauthtoken ${accessToken}`,
                 Accept: 'application/json'
             },
             params
+            
         })
         return response.data;
     } catch (error) {
