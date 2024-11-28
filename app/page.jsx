@@ -6,6 +6,22 @@ const App = () => {
 
   const [shipments, setShipments] = useState([]);
   const [horses, setHorses] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [vendorStatus, setVendorStatus] = useState([]);
+  const [trailers, setTrailers] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [passports, setPassports] = useState([]);
+  const [customers,setCustomers] = useState([]);
+  const [dispatchers, setDispatchers] = useState([
+    {
+      label: "DLZ",
+      value: "DLZ"
+    },
+    {
+      label: "Vendor",
+      value: "Vendor"
+    },
+  ])
   const [options, setOptions] = useState([
     {
       label: 'Choice 1',
@@ -56,37 +72,91 @@ const App = () => {
   };
 
   useEffect(() => {
-    const init = async () => {
-      const fetchRecords = async (reportName, criteria = null) => {
+    const fetchRecords = async (reportName, criteria = null) => {
+      try {
         const query = new URLSearchParams({ reportName, ...(criteria && { criteria }) });
         const response = await fetch(`/api/zoho?${query}`);
         const result = await response.json();
-        if (result) {
-          return result.records.data
+        if (result && result.records?.data) {
+          return result.records.data;
         } else {
-          console.error(result.error);
-          return []
+          console.error("Error fetching records:", result.error || "Unknown error");
+          return [];
         }
-      };
-      const shipmentResponse = await  fetchRecords("All_Shipments", `(Approval_Status == "Approved")`);
-      const all_shipments = shipmentResponse.map(record => {
-        return {
+      } catch (error) {
+        console.error("Fetch error:", error);
+        return [];
+      }
+    };
+
+    const init = async () => {
+      try {
+        // Fetch Shipments
+        const shipmentResponse = await fetchRecords("All_Shipments", `(Approval_Status == "Approved")`);
+        const all_shipments = shipmentResponse.map(record => ({
           label: record.Shipment,
-          value: record.Shipment
-        }
-      })
-      setShipments(all_shipments);
-      const horseResponse = await fetchRecords("All_Horse",`(Approval_Status == "Approved")`);
-      const all_horses = horseResponse.map(record => {
-        return{
+          value: record.Shipment,
+        }));
+        setShipments(all_shipments);
+
+        // Fetch Horses
+        const horseResponse = await fetchRecords("All_Horse", `(Approval_Status == "Approved")`);
+        const all_horses = horseResponse.map(record => ({
           label: record.Horse,
-          value: record.Horse
-        }
-      })
-      setHorses(all_horses);
-    }
+          value: record.Horse,
+        }));
+        setHorses(all_horses);
+
+        // Vendor Response
+        const vendorResponse = await fetchRecords("All_Vendors", `(Approval_Status == "Approved")`);
+        const all_vendors = vendorResponse.map(record => ({
+          label: record.Vendor,
+          value: record.Vendor
+        }))
+        setVendors(all_vendors);
+
+        // fetch vendor status
+        const vendorStatusResponse = await fetchRecords("All_Vendor_Statuses", `(ID != 0)`);
+        const all_vendor_status = vendorStatusResponse.map(record => ({
+          label: record.Vendor_Status,
+          value: record.Vendor_Status
+        }))
+        setVendorStatus(all_vendor_status);
+
+        // fetch trailer
+        const trailerResponse = await fetchRecords("All_Trailers",`(Approval_Status == "Approved")`);
+        const all_trailers = trailerResponse.map(record => ({
+          label: record.Trailer,
+          value: record.Trailer
+        }))
+        setTrailers(all_trailers);
+
+        // fetch Drivers
+        const driverResposne = await fetchRecords("Approved_Drivers",`(Approval_Status == "Approved")`);
+        const all_drivers = driverResposne.map(record => ({
+          label: `${record.Name_Driver.first_name} ${record.Name_Driver.last_name}`,
+          value: `${record.Name_Driver.first_name} ${record.Name_Driver.last_name}`
+        }))
+        setDrivers(all_drivers);
+        const all_passports = driverResposne.map(record => ({
+          label: record.Passport,
+          value: record.Passport
+        }))
+        setPassports(all_passports);
+
+        // fetch customers
+        const customerResponse = await fetchRecords("All_Customers","(ID != 0)");
+        const all_customers = customerResponse.map(record => ({
+          label: record.Customer_Name,
+          value: record.Customer_Name
+        }))
+        setCustomers(all_customers);
+      } catch (error) {
+        console.error("Initialization error:", error);
+      }
+    };
+
     init();
-   
   }, []);
 
 
@@ -168,7 +238,7 @@ const App = () => {
             </Form.Item>
             <Form.Item label='Vendor' className='w-[300px]'>
               <Select
-                options={options}
+                options={vendors}
                 showSearch
                 allowClear
                 value={bookingObj.Vendor}
@@ -177,7 +247,7 @@ const App = () => {
             </Form.Item>
             <Form.Item label='Vendor Status' className='w-[300px]'>
               <Select
-                options={options}
+                options={vendorStatus}
                 showSearch
                 allowClear
                 value={bookingObj.Vendor_Status}
@@ -188,7 +258,7 @@ const App = () => {
           <Flex gap={60}>
             <Form.Item label='1st Trailer #' className='w-[300px]'>
               <Select
-                options={options}
+                options={trailers}
                 showSearch
                 allowClear
                 value={bookingObj.st_Trailer}
@@ -197,7 +267,7 @@ const App = () => {
             </Form.Item>
             <Form.Item label='2nd Trailer #' className='w-[300px]'>
               <Select
-                options={options}
+                options={trailers}
                 showSearch
                 allowClear
                 value={bookingObj.nd_Trailer}
@@ -242,6 +312,7 @@ const App = () => {
             <Form.Item label='ETA' className='w-[300px]'>
               <DatePicker
                 className='w-[300px]'
+                format="DD-MMM-YYYY"
                 value={bookingObj.ETA}
                 onChange={(value) => handleInputChange("ETA", value)}
               />
@@ -249,6 +320,7 @@ const App = () => {
             <Form.Item label='Loading Site Arrival' className='w-[300px]'>
               <DatePicker
                 className='w-[300px]'
+                format="DD-MMM-YYYY"
                 value={bookingObj.LoadingSiteArrival}
                 onChange={(value) => handleInputChange("LoadingSiteArrival", value)}
               />
@@ -258,7 +330,7 @@ const App = () => {
           <Flex gap={60}>
             <Form.Item label='Dispatcher' className='w-[300px]'>
               <Select
-                options={options}
+                options={dispatchers}
                 showSearch
                 allowClear
                 value={bookingObj.Dispatcher}
@@ -277,7 +349,7 @@ const App = () => {
           <Flex gap={60}>
             <Form.Item label='Driver' className='w-[300px]'>
               <Select
-                options={options}
+                options={drivers}
                 allowClear
                 showSearch
                 value={bookingObj.Driver}
@@ -286,7 +358,7 @@ const App = () => {
             </Form.Item>
             <Form.Item label='Passport' className='w-[300px]'>
               <Select
-                options={options}
+                options={passports}
                 allowClear
                 showSearch
                 value={bookingObj.Passport}
@@ -303,7 +375,7 @@ const App = () => {
             </Form.Item>
             <Form.Item label='Customer Name' className='w-[300px]'>
               <Select
-                options={options}
+                options={customers}
                 allowClear
                 showSearch
                 value={bookingObj.Customer_Name}
