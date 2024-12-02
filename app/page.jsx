@@ -4,6 +4,8 @@ import { Button, DatePicker, Flex, Form, Input, InputNumber, Select } from 'antd
 import Loading from './Loading';
 const App = () => {
 
+  const [shipmentObj, setShipmentObj] = useState([]);
+  const [driverObj, setDriverObj] = useState([]);
   const [shipments, setShipments] = useState([]);
   const [horses, setHorses] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -12,7 +14,8 @@ const App = () => {
   const [drivers, setDrivers] = useState([]);
   const [passports, setPassports] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [isLoading, setLoading] = useState(false);
+  const [horseArr, setHorseArr] = useState([]);
+  const [isLoading, setLoading] = useState(true);
   const [dispatchers, setDispatchers] = useState([
     {
       label: "DLZ",
@@ -21,16 +24,6 @@ const App = () => {
     {
       label: "Vendor",
       value: "Vendor"
-    },
-  ])
-  const [options, setOptions] = useState([
-    {
-      label: 'Choice 1',
-      value: 'Choice 1'
-    },
-    {
-      label: 'Choice 2',
-      value: 'Choice 2'
     },
   ]);
 
@@ -73,7 +66,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    
+
     const fetchRecords = async (reportName, criteria = null) => {
       try {
         const query = new URLSearchParams({ reportName, ...(criteria && { criteria }) });
@@ -96,6 +89,7 @@ const App = () => {
         // Fetch Shipments
         setLoading(true);
         const shipmentResponse = await fetchRecords("All_Shipments", `(Approval_Status == "Approved")`);
+        setShipmentObj(shipmentResponse);
         const all_shipments = shipmentResponse.map(record => ({
           label: record.Shipment,
           value: record.Shipment,
@@ -104,6 +98,7 @@ const App = () => {
 
         // Fetch Horses
         const horseResponse = await fetchRecords("All_Horse", `(Approval_Status == "Approved")`);
+        setHorseArr(horseResponse);
         const all_horses = horseResponse.map(record => ({
           label: record.Horse,
           value: record.Horse,
@@ -136,6 +131,7 @@ const App = () => {
 
         // fetch Drivers
         const driverResposne = await fetchRecords("Approved_Drivers", `(Approval_Status == "Approved")`);
+        setDriverObj(driverResposne);
         const all_drivers = driverResposne.map(record => ({
           label: `${record.Name_Driver.first_name} ${record.Name_Driver.last_name}`,
           value: `${record.Name_Driver.first_name} ${record.Name_Driver.last_name}`
@@ -171,6 +167,92 @@ const App = () => {
     </Select>
   );
 
+  const handleShipment = (value) => {
+    const shipObj = shipmentObj.filter(record => record.Shipment === value);
+    console.log(shipObj);
+    if (value && shipObj.length > 0) {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Shipment"]: value,
+        ["Commodity"]: shipObj[0].Commodity,
+        ["Origin"]: shipObj[0].Origin.zc_display_value,
+        ["Service_Location"]: shipObj[0].Service_Locations.zc_display_value,
+        ["Destination"]: shipObj[0].Destinations.zc_display_value,
+        ["Vendor_Bill"]: shipObj[0].Vendor_Bill,
+        ["Customer_Name"]: shipObj[0].Customer.zc_display_value,
+        ["Select_Book"]: shipObj[0].Select_Book.zc_display_value,
+        ["Rate_Per_MT"]: shipObj[0].Rate_Per_MT
+      }))
+    }
+    else {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Shipment"]: value,
+        ["Commodity"]: "",
+        ["Origin"]: "",
+        ["Service_Location"]: "",
+        ["Destination"]: "",
+        ["Vendor_Bill"]: "",
+        ["Customer_Name"]: "",
+        ["Select_Book"]: "",
+        ["Rate_Per_MT"]: ""
+      }))
+    }
+
+  }
+  const handleDriverChange = (value) => {
+    const passportObj = driverObj.filter(record => {
+      const driver_name = record.Name_Driver.first_name + " " + record.Name_Driver.last_name;
+      return driver_name === value
+    })
+    if (value && passportObj.length > 0) {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Driver"]: value,
+        ["Passport"]: passportObj[0].Passport
+      }))
+    }
+    else {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Driver"]: value,
+        ["Passport"]: ""
+      }))
+    }
+  }
+
+  const handleHorseChange = (value) => {
+    const horseObj = horseArr.filter(record => record.Horse === value);
+    if (value) {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Horse"]: value,
+        ["Vendor"]: horseObj[0].Vendor && horseObj[0].Vendor.zc_display_value,
+        ["Vendor_Status"]: horseObj[0].Vendor_Status && horseObj[0].Vendor_Status.zc_display_value,
+        ["st_Trailer"]: horseObj[0].defualt_1st_Trailer && horseObj[0].defualt_1st_Trailer.zc_display_value,
+        ["nd_Trailer"]: horseObj[0].Defualt_2nd_Trailer && horseObj[0].Defualt_2nd_Trailer.zc_display_value,
+        ["GPS"]: horseObj[0].GPS_Status && horseObj[0].GPS_Status,
+        ["Horse_Contact_Person"]: horseObj[0].Horse_Contact_PersonH && horseObj[0].Horse_Contact_PersonH.zc_display_value,
+        ["Horse_Contact_Number"]: horseObj[0].Horse_Contact_NumberH && horseObj[0].Horse_Contact_NumberH.slice(-10)
+      }))
+    }
+    else {
+      setBookingObj(prev => ({
+        ...prev,
+        ["Horse"]: value,
+        ["Vendor"]: ""
+      }))
+    }
+  }
+
+  const handleDispathcer = (value) => {
+    setBookingObj(prev => ({
+      ...prev,
+      ["Dispatcher"] : value,
+      ["Vendor_Credit"]: value === "DLZ" ? 5 : 0
+    }))
+  }
+
   const onSubmit = () => {
     console.log(bookingObj);
   }
@@ -196,7 +278,7 @@ const App = () => {
                         placeholder='Shipment #'
                         allowClear
                         value={bookingObj.Shipment}
-                        onChange={(value) => handleInputChange("Shipment", value)}
+                        onChange={(value) => handleShipment(value)}
                       />
                     </Form.Item>
                     <Form.Item label='Commodity' className='w-[300px]'>
@@ -244,7 +326,7 @@ const App = () => {
                         showSearch
                         allowClear
                         value={bookingObj.Horse}
-                        onChange={(value) => handleInputChange("Horse", value)}
+                        onChange={handleHorseChange}
                       />
                     </Form.Item>
                     <Form.Item label='Vendor' className='w-[300px]'>
@@ -345,12 +427,15 @@ const App = () => {
                         showSearch
                         allowClear
                         value={bookingObj.Dispatcher}
-                        onChange={(value) => handleInputChange("Dispatcher", value)}
+                        onChange={handleDispathcer}
                       />
                     </Form.Item>
                     <Form.Item label='Vendor Credit' className='w-[300px]'>
                       <InputNumber
                         className='w-[300px]'
+                        min={0}
+                        max={100}
+                        formatter={(value) => `${value}%`}
                         value={bookingObj.Vendor_Credit}
                         onChange={(value) => handleInputChange("Vendor_Credit", value)}
                       />
@@ -364,7 +449,7 @@ const App = () => {
                         allowClear
                         showSearch
                         value={bookingObj.Driver}
-                        onChange={(value) => handleInputChange("Driver", value)}
+                        onChange={handleDriverChange}
                       />
                     </Form.Item>
                     <Form.Item label='Passport' className='w-[300px]'>

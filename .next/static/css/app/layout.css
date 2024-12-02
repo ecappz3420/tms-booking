@@ -847,12 +847,6 @@ video {
 .gap-3 {
   gap: 0.75rem;
 }
-.gap-5 {
-  gap: 1.25rem;
-}
-.gap-\[30px\] {
-  gap: 30px;
-}
 .gap-\[100px\] {
   gap: 100px;
 }
@@ -882,5 +876,8 @@ video {
 }
 .font-bold {
   font-weight: 700;
+}
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
