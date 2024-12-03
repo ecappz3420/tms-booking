@@ -1,7 +1,8 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { Button, DatePicker, Flex, Form, Input, InputNumber, Select } from 'antd';
+import { Button, DatePicker, Flex, Form, Input, InputNumber, Modal, Popover, Select } from 'antd';
 import Loading from './Loading';
+import currencies from './currencylist';
 const App = () => {
 
   const [shipmentObj, setShipmentObj] = useState([]);
@@ -16,6 +17,12 @@ const App = () => {
   const [customers, setCustomers] = useState([]);
   const [horseArr, setHorseArr] = useState([]);
   const [isLoading, setLoading] = useState(true);
+  const [currencyRates, setCurrencyRates] = useState([]);
+  const [currencyType, setCurrencyType] = useState("INR");
+  const [baseCurrency, setBaseCurrency] = useState("INR");
+  const [currencyValue, setCurrencyValue] = useState(0);
+  const [openPopup, setOpenPopup] = useState(false);
+  const [modifyCurrency, setModifyCUrrency] = useState(0);
   const [dispatchers, setDispatchers] = useState([
     {
       label: "DLZ",
@@ -56,6 +63,7 @@ const App = () => {
     Rate_Per_MT: "",
     Select_Book: "",
     Transporter: "",
+    Current_Position: ""
   });
 
   const handleInputChange = (field, value) => {
@@ -150,6 +158,14 @@ const App = () => {
           value: record.Customer_Name
         }))
         setCustomers(all_customers);
+        const currenyObj = currencies.map(curr => {
+          return {
+            label: curr.code,
+            value: curr.code
+          }
+        });
+        setCurrencyRates(currenyObj);
+
         setLoading(false);
       } catch (error) {
         console.error("Initialization error:", error);
@@ -157,6 +173,35 @@ const App = () => {
     };
     init();
   }, []);
+
+  const handleCurrencyChange = async (value) => {
+    setCurrencyType(value);
+    try {
+      const config = {
+        method: "GET",
+        accept: "application/json"
+      };
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${value}`, config);
+      const result = await response.json();
+      setCurrencyValue(result.conversion_rates[baseCurrency]);
+      setModifyCUrrency(result.conversion_rates[baseCurrency]);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  const handleCurrencyModify = () => {
+    setCurrencyValue(modifyCurrency);
+    setOpenPopup(false);
+  }
+  const currencyDropdown = (
+    <Select
+      style={{ width: 80 }}
+      value={currencyType}
+      onChange={handleCurrencyChange}
+      defaultValue="USD"
+      options={currencyRates}
+      showSearch />
+  );
 
 
   const phoneCode = (
@@ -248,7 +293,7 @@ const App = () => {
   const handleDispathcer = (value) => {
     setBookingObj(prev => ({
       ...prev,
-      ["Dispatcher"] : value,
+      ["Dispatcher"]: value,
       ["Vendor_Credit"]: value === "DLZ" ? 5 : 0
     }))
   }
@@ -256,6 +301,7 @@ const App = () => {
   const onSubmit = () => {
     console.log(bookingObj);
   }
+
 
   return (
     <>
@@ -310,17 +356,35 @@ const App = () => {
                   </Flex>
                   <Flex gap={60}>
                     <Form.Item label='Vendor Bill' className='w-[300px]'>
-                      <Input
+                      <InputNumber
+                        addonBefore={currencyDropdown}
                         value={bookingObj.Vendor_Bill}
                         onChange={(e) => handleInputChange("Vendor_Bill", e.target.value)}
                       />
+                      {baseCurrency != currencyType &&
+                        (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
+                          <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                          <a onClick={() => setOpenPopup(true)}>Edit</a>
+                          <Modal open={openPopup} title="Modify Currency" onClose={() => setOpenPopup(false)} onOk={handleCurrencyModify}>
+                            <div>
+                              <InputNumber
+                                value={modifyCurrency}
+                                onChange={(value) => setModifyCUrrency(value)} />
+                            </div>
+                          </Modal>
+                        </div>)
+                      }
+
                     </Form.Item>
                   </Flex>
                 </div>
                 <div className='border-b border-t p-2 font-bold text-lg bg-slate-50'>Truck Details</div>
                 <div className="mt-3">
                   <Flex gap={60}>
-                    <Form.Item label='Horse' className='w-[300px]'>
+                    <Form.Item
+                      label='Horse'
+                      className='w-[300px]'
+                    >
                       <Select
                         options={horses}
                         showSearch
@@ -395,12 +459,15 @@ const App = () => {
                     <Form.Item label='GPS' className='w-[300px]' required>
                       <Input
                         value={bookingObj.GPS}
-                        onChange={(value) => handleInputChange("GPS", value)} />
+                        onChange={(value) => handleInputChange("GPS", value)}
+                      />
                     </Form.Item>
                   </Flex>
                   <Flex gap={60}>
                     <Form.Item label='Current Position' className='w-[300px]'>
-                      <Input />
+                      <Input
+                        value={bookingObj.Current_Position}
+                        onChange={(value) => handleInputChange("Current_Position", value)} />
                     </Form.Item>
                     <Form.Item label='ETA' className='w-[300px]'>
                       <DatePicker
@@ -479,9 +546,23 @@ const App = () => {
                     </Form.Item>
                     <Form.Item label='Rate Per MT' className='w-[300px]'>
                       <InputNumber
+                        addonBefore={currencyDropdown}
                         className='w-[300px]'
                         value={bookingObj.Rate_Per_MT}
                         onChange={(value) => handleInputChange("Rate_Per_MT", value)} />
+                      {baseCurrency != currencyType &&
+                        (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
+                          <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                          <a onClick={() => setOpenPopup(true)}>Edit</a>
+                          <Modal open={openPopup} title="Modify Currency" onClose={() => setOpenPopup(false)} onOk={handleCurrencyModify}>
+                            <div>
+                              <InputNumber
+                                value={modifyCurrency}
+                                onChange={(value) => setModifyCUrrency(value)} />
+                            </div>
+                          </Modal>
+                        </div>)
+                      }
                     </Form.Item>
                   </Flex>
                   <Flex gap={60}>
