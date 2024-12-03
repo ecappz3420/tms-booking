@@ -19,7 +19,7 @@ const App = () => {
   const [isLoading, setLoading] = useState(true);
   const [currencyRates, setCurrencyRates] = useState([]);
   const [currencyType, setCurrencyType] = useState("INR");
-  const [baseCurrency, setBaseCurrency] = useState("INR");
+  const [baseCurrency] = useState("INR");
   const [currencyValue, setCurrencyValue] = useState(0);
   const [openPopup, setOpenPopup] = useState(false);
   const [modifyCurrency, setModifyCUrrency] = useState(0);
@@ -33,8 +33,6 @@ const App = () => {
       value: "Vendor"
     },
   ]);
-
-
 
   const [bookingObj, setBookingObj] = useState({
     Shipment: "",
@@ -214,7 +212,6 @@ const App = () => {
 
   const handleShipment = (value) => {
     const shipObj = shipmentObj.filter(record => record.Shipment === value);
-    console.log(shipObj);
     if (value && shipObj.length > 0) {
       setBookingObj(prev => ({
         ...prev,
@@ -321,7 +318,7 @@ const App = () => {
                       <Select
                         showSearch
                         options={shipments}
-                        placeholder='Shipment #'
+                        placeholder="Shipment #"
                         allowClear
                         value={bookingObj.Shipment}
                         onChange={(value) => handleShipment(value)}
@@ -362,17 +359,24 @@ const App = () => {
                         onChange={(e) => handleInputChange("Vendor_Bill", e.target.value)}
                       />
                       {baseCurrency != currencyType &&
-                        (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
-                          <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
-                          <a onClick={() => setOpenPopup(true)}>Edit</a>
-                          <Modal open={openPopup} title="Modify Currency" onClose={() => setOpenPopup(false)} onOk={handleCurrencyModify}>
-                            <div>
-                              <InputNumber
-                                value={modifyCurrency}
-                                onChange={(value) => setModifyCUrrency(value)} />
-                            </div>
-                          </Modal>
-                        </div>)
+                        (
+                          <div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
+                            <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                            <a onClick={() => setOpenPopup(true)}>Edit</a>
+                            <Modal
+                              open={openPopup}
+                              title="Modify Currency"
+                              onClose={() => setOpenPopup(false)}
+                              onOk={handleCurrencyModify}
+                              onCancel={() => setOpenPopup(false)}>
+                              <div>
+                                <InputNumber
+                                  value={modifyCurrency}
+                                  onChange={(value) => setModifyCUrrency(value)} />
+                              </div>
+                            </Modal>
+                          </div>
+                        )
                       }
 
                     </Form.Item>
@@ -554,11 +558,17 @@ const App = () => {
                         (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
                           <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
                           <a onClick={() => setOpenPopup(true)}>Edit</a>
-                          <Modal open={openPopup} title="Modify Currency" onClose={() => setOpenPopup(false)} onOk={handleCurrencyModify}>
+                          <Modal
+                            open={openPopup}
+                            title="Modify Currency"
+                            onClose={() => setOpenPopup(false)}
+                            onOk={handleCurrencyModify}
+                            onCancel={() => setOpenPopup(false)}>
                             <div>
                               <InputNumber
                                 value={modifyCurrency}
-                                onChange={(value) => setModifyCUrrency(value)} />
+                                onChange={(value) => setModifyCUrrency(value)}
+                                className='w-[200px]' />
                             </div>
                           </Modal>
                         </div>)

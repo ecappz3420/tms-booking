@@ -1,3 +1,4 @@
+'use client'
 const currencies = [
     { code: "USD", symbol: "$", country: "United States" },
     { code: "AED", symbol: "د.إ", country: "United Arab Emirates" },
