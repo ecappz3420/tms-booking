@@ -29,16 +29,33 @@ export async function refreshAccessToken() {
 
 export async function getRecords(accessToken, reportName, criteria) {
     try {
-        const params = criteria ? {criteria} : {};
-        const response = await axios.get(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/${reportName}?criteria=${criteria}`,{
+        const params = criteria ? { criteria } : {};
+        const response = await axios.get(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/${reportName}?criteria=${criteria}`, {
             headers: {
                 Authorization: `Zoho-oauthtoken ${accessToken}`,
                 Accept: 'application/json'
-            },  
+            },
         })
         return response.data;
     } catch (error) {
-        console.log("Error getting records :"+ error);
+        console.log("Error getting records :" + error);
+    }
+}
+
+export async function addBooking(accessToken, data) {
+    try {
+        const formData = {
+            data: data
+        }
+        const response = await axios.post("https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/form/Booking", formData, {
+            headers: {
+                Authorization: `Zoho-oauthtoken ${accessToken}`,
+                Accept: 'application/json'
+            }
+        })
+        return response;
+    } catch (error) {
+        console.log(error);
     }
 }
 

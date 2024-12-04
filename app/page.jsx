@@ -1,16 +1,19 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { Button, DatePicker, Flex, Form, Input, InputNumber, Modal, Popover, Select } from 'antd';
+import { Button, DatePicker, Flex, Form, Input, InputNumber, message, Modal, Select } from 'antd';
 import Loading from './Loading';
 import currencies from './currencylist';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'
 const App = () => {
-
   const [shipmentObj, setShipmentObj] = useState([]);
   const [driverObj, setDriverObj] = useState([]);
   const [shipments, setShipments] = useState([]);
   const [horses, setHorses] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [vendorArr, setVendorArr] = useState([]);
   const [vendorStatus, setVendorStatus] = useState([]);
+  const [vendorStatusArr, setVendorStatusArr] = useState([]);
   const [trailers, setTrailers] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [passports, setPassports] = useState([]);
@@ -23,7 +26,10 @@ const App = () => {
   const [currencyValue, setCurrencyValue] = useState(0);
   const [openPopup, setOpenPopup] = useState(false);
   const [modifyCurrency, setModifyCUrrency] = useState(0);
-  const [dispatchers, setDispatchers] = useState([
+  const [trailerArr, setTrailerArr] = useState([]);
+  const [customerArr, setCustomerArr] = useState([]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [dispatchers] = useState([
     {
       label: "DLZ",
       value: "DLZ"
@@ -64,6 +70,18 @@ const App = () => {
     Current_Position: ""
   });
 
+  const [messageApi, contextHolder] = message.useMessage();
+  const success = () => {
+    messageApi.open({
+      type: 'loading',
+      content: 'Adding Record...',
+      duration: 0
+    })
+  }
+
+  const submitted = () => {
+    messageApi.info("Data Successfullly Added!");
+  }
   const handleInputChange = (field, value) => {
     setBookingObj((prev) => ({
       ...prev,
@@ -113,6 +131,7 @@ const App = () => {
 
         // Vendor Response
         const vendorResponse = await fetchRecords("All_Vendors", `(Approval_Status == "Approved")`);
+        setVendorArr(vendorResponse);
         const all_vendors = vendorResponse.map(record => ({
           label: record.Vendor,
           value: record.Vendor
@@ -121,6 +140,7 @@ const App = () => {
 
         // fetch vendor status
         const vendorStatusResponse = await fetchRecords("All_Vendor_Statuses", `(ID != 0)`);
+        setVendorStatusArr(vendorStatusResponse);
         const all_vendor_status = vendorStatusResponse.map(record => ({
           label: record.Vendor_Status,
           value: record.Vendor_Status
@@ -129,6 +149,7 @@ const App = () => {
 
         // fetch trailer
         const trailerResponse = await fetchRecords("All_Trailers", `(Approval_Status == "Approved")`);
+        setTrailerArr(trailerResponse);
         const all_trailers = trailerResponse.map(record => ({
           label: record.Trailer,
           value: record.Trailer
@@ -151,6 +172,7 @@ const App = () => {
 
         // fetch customers
         const customerResponse = await fetchRecords("All_Customers", "(ID != 0)");
+        setCustomerArr(customerResponse);
         const all_customers = customerResponse.map(record => ({
           label: record.Customer_Name,
           value: record.Customer_Name
@@ -199,15 +221,6 @@ const App = () => {
       defaultValue="USD"
       options={currencyRates}
       showSearch />
-  );
-
-
-  const phoneCode = (
-    <Select defaultValue='+260' showSearch style={{ width: 80 }}>
-      <Select.Option value='+91'>+91</Select.Option>
-      <Select.Option value='+260'>+260</Select.Option>
-      <Select.Option value='+1'>+1</Select.Option>
-    </Select>
   );
 
   const handleShipment = (value) => {
@@ -275,7 +288,7 @@ const App = () => {
         ["nd_Trailer"]: horseObj[0].Defualt_2nd_Trailer && horseObj[0].Defualt_2nd_Trailer.zc_display_value,
         ["GPS"]: horseObj[0].GPS_Status && horseObj[0].GPS_Status,
         ["Horse_Contact_Person"]: horseObj[0].Horse_Contact_PersonH && horseObj[0].Horse_Contact_PersonH.zc_display_value,
-        ["Horse_Contact_Number"]: horseObj[0].Horse_Contact_NumberH && horseObj[0].Horse_Contact_NumberH.slice(-10)
+        ["Horse_Contact_Number"]: horseObj[0].Horse_Contact_NumberH && horseObj[0].Horse_Contact_NumberH
       }))
     }
     else {
@@ -295,9 +308,97 @@ const App = () => {
     }))
   }
 
-  const onSubmit = () => {
-    console.log(bookingObj);
+  const clearAll = () => {
+    setBookingObj(prev => ({
+      ...prev,
+      Shipment: "",
+      Commodity: "",
+      Origin: "",
+      Service_Location: "",
+      Destination: "",
+      Vendor_Bill: "",
+      Horse: "",
+      Horse_Contact_Person: "",
+      GPS: "",
+      Vendor: "",
+      st_Trailer: "",
+      Current_Position: "",
+      Vendor_Status: "",
+      nd_Trailer: "",
+      ETA: "",
+      Horse_Contact_Number: "",
+      Tonnage: "",
+      LoadingSiteArrival: "",
+      Dispatcher: "",
+      Vendor_Credit: "",
+      Driver: "",
+      Passport: "",
+      Customer_Name: "",
+      Rate_Per_MT: "",
+      Select_Book: "",
+      Transporter: "",
+      Current_Position: ""
+    }))
   }
+  // Handle Submission
+  const onSubmit = async () => {
+    try {
+      success();
+      setSubmitLoading(true);
+      const shipmentID = shipmentObj.find(i => i.Shipment === bookingObj.Shipment)?.ID || "";
+      const horseID = horseArr.find(i => i.Horse === bookingObj.Horse)?.ID || "";
+      const vendorID = vendorArr.find(i => i.Vendor === bookingObj.Vendor)?.ID || "";
+      const vendorStatusId = vendorStatusArr.find(i => i.Vendor_Status === bookingObj.Vendor_Status)?.ID || "";
+      const trailer1ID = trailerArr.find(i => i.Trailer === bookingObj.st_Trailer)?.ID || "";
+      const trailer2ID = trailerArr.find(i => i.Trailer === bookingObj.nd_Trailer)?.ID || "";
+      const driverID = driverObj.find(i => i.Name_Driver.zc_display_value === bookingObj.Driver)?.ID || "";
+      const customerID = customerArr.find(i => i.Customer_Name === bookingObj.Customer_Name)?.ID || "";
+      const contactPersonName = bookingObj.Horse_Contact_Person;
+      const etaDate = bookingObj.ETA.format("DD-MMM-YYYY");
+      const loadingArrivalDate = bookingObj.LoadingSiteArrival.format("DD-MMM-YYYY");
+      const bookingData = {
+        ...bookingObj,
+        Shipment: shipmentID,
+        Horse: horseID,
+        Vendor: vendorID,
+        Vendor_Status: vendorStatusId,
+        st_Trailer: trailer1ID,
+        nd_Trailer: trailer2ID,
+        Driver: driverID,
+        Passport: driverID,
+        Customer_Name: customerID,
+        Approval_Status: "Pending",
+        Horse_Contact_Person: {
+          first_name: contactPersonName,
+          last_name: ""
+        },
+        ETA: etaDate,
+        LoadingSiteArrival: loadingArrivalDate,
+        Vendor_Bill_String: currencies.find(c => c.code === currencyType).symbol + " " + bookingObj.Vendor_Bill,
+        Rate_Per_MT_String: currencies.find(c => c.code === currencyType).symbol + " " + bookingObj.Rate_Per_MT
+      };
+      try {
+        const response = await fetch("api/addBooking", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(bookingData)
+        })
+        console.log(response);
+        setSubmitLoading(false);
+        messageApi.destroy();
+        clearAll();
+        submitted();
+      } catch (error) {
+        console.log(error);
+      }
+
+    } catch (error) {
+      console.error("Error in onSubmit:", error);
+    }
+  };
+
 
 
   return (
@@ -314,7 +415,12 @@ const App = () => {
                 <div className='border-b bortder-t p-2 font-bold text-lg bg-slate-50'>Load Details</div>
                 <div className="mt-3">
                   <Flex gap={60}>
-                    <Form.Item label='Shipment #' className='w-[300px]'>
+                    <Form.Item label='Shipment #' className='w-[300px]' rules={
+                      {
+                        required: true,
+                        message: "Please select Shipment"
+                      }
+                    }>
                       <Select
                         showSearch
                         options={shipments}
@@ -356,7 +462,7 @@ const App = () => {
                       <InputNumber
                         addonBefore={currencyDropdown}
                         value={bookingObj.Vendor_Bill}
-                        onChange={(e) => handleInputChange("Vendor_Bill", e.target.value)}
+                        onChange={(value) => handleInputChange("Vendor_Bill", value)}
                       />
                       {baseCurrency != currencyType &&
                         (
@@ -440,7 +546,7 @@ const App = () => {
                         type='number'
                         className='w-[300px]'
                         value={bookingObj.Tonnage}
-                        onChange={(value) => handleInputChange("Tonnage", value)}
+                        onChange={(e) => handleInputChange("Tonnage", e.target.value)}
                       />
                     </Form.Item>
                   </Flex>
@@ -448,22 +554,21 @@ const App = () => {
                     <Form.Item label='Contact Person' className='w-[300px]'>
                       <Input
                         value={bookingObj.Horse_Contact_Person}
-                        onChange={(value) => handleInputChange("Horse_Contact_Person", value)}
+                        onChange={(e) => handleInputChange("Horse_Contact_Person", e.target.value)}
                       />
                     </Form.Item>
                     <Form.Item label='Contact Number'>
-                      <InputNumber
-                        addonBefore={phoneCode}
+                      <PhoneInput
+                        country={'zm'}
                         className='w-[300px]'
-                        maxLength={10}
                         value={bookingObj.Horse_Contact_Number}
-                        onChange={(value) => handleInputChange("Horse_Contact_Number", value)}
+                        onChange={(value) => handleInputChange("Horse_Contact_Number", "+" + value)}
                       />
                     </Form.Item>
                     <Form.Item label='GPS' className='w-[300px]' required>
                       <Input
                         value={bookingObj.GPS}
-                        onChange={(value) => handleInputChange("GPS", value)}
+                        onChange={(e) => handleInputChange("GPS", e.target.value)}
                       />
                     </Form.Item>
                   </Flex>
@@ -471,7 +576,7 @@ const App = () => {
                     <Form.Item label='Current Position' className='w-[300px]'>
                       <Input
                         value={bookingObj.Current_Position}
-                        onChange={(value) => handleInputChange("Current_Position", value)} />
+                        onChange={(e) => handleInputChange("Current_Position", e.target.value)} />
                     </Form.Item>
                     <Form.Item label='ETA' className='w-[300px]'>
                       <DatePicker
@@ -537,7 +642,7 @@ const App = () => {
                     <Form.Item label='Select Book' className='w-[300px]'>
                       <Input
                         value={bookingObj.Select_Book}
-                        onChange={(value) => handleInputChange("Select_Book", value)}
+                        onChange={(e) => handleInputChange("Select_Book", e.target.value)}
                       />
                     </Form.Item>
                     <Form.Item label='Customer Name' className='w-[300px]'>
@@ -577,15 +682,22 @@ const App = () => {
                   </Flex>
                   <Flex gap={60}>
                     <Form.Item label='Transporter' className='w-[300px]'>
-                      <Input
+                      <Select
+                        options={[
+                          {
+                            label: "DHAQANE",
+                            value: "DHAQANE"
+                          }
+                        ]}
                         value={bookingObj.Transporter}
                         onChange={(value) => handleInputChange("Transporter", value)} />
                     </Form.Item>
                   </Flex>
                 </div>
                 <div className='flex gap-3 justify-center'>
-                  <Button type='primary' htmlType='submit'>Submit</Button>
-                  <Button variant='outlined' htmlType='reset'>Reset</Button>
+                  {contextHolder}
+                  <Button type='primary' disabled={submitLoading} htmlType='submit'>Submit</Button>
+                  <Button onClick={clearAll} variant='outlined' htmlType='reset'>Reset</Button>
                 </div>
               </Form>
             </div>
