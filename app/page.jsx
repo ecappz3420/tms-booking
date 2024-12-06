@@ -1,10 +1,12 @@
-'use client'
+'use client';
 import React, { useEffect, useState } from 'react';
 import { Button, DatePicker, Flex, Form, Input, InputNumber, message, Modal, Select } from 'antd';
 import Loading from './Loading';
 import currencies from './currencylist';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'
+import { useSearchParams } from 'next/navigation';
+import dayjs from 'dayjs';
 const App = () => {
   const [shipmentObj, setShipmentObj] = useState([]);
   const [driverObj, setDriverObj] = useState([]);
@@ -29,6 +31,7 @@ const App = () => {
   const [trailerArr, setTrailerArr] = useState([]);
   const [customerArr, setCustomerArr] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [dispatchers] = useState([
     {
       label: "DLZ",
@@ -39,6 +42,8 @@ const App = () => {
       value: "Vendor"
     },
   ]);
+
+
 
   const [bookingObj, setBookingObj] = useState({
     Shipment: "",
@@ -70,17 +75,74 @@ const App = () => {
     Current_Position: ""
   });
 
+
+  const params = useSearchParams();
+  const bookingId = params?.get("bookingId");
+  useEffect(() => {
+    if (bookingId) {
+      const initiate = async () => {
+        const query = new URLSearchParams({ reportName: "All_Booking", criteria: `(ID == ${bookingId})` })
+        try {
+          const response = await fetch(`/api/zoho?${query}`);
+          const result = await response.json();
+          if (result.records.code === 3000) {
+            setEditMode(true);
+            const data = result.records.data[0];
+            console.log(data);
+            setBookingObj(prev => ({
+              ...prev,
+              Shipment: data.Shipment?.zc_display_value,
+              Commodity: data.Commodity,
+              Origin: data.Origin,
+              Service_Location: data.Service_Location,
+              Destination: data.Destination,
+              Vendor_Bill: data.Vendor_Bill,
+              Horse: data.Horse?.zc_display_value,
+              Horse_Contact_Person: data.Horse_Contact_Person?.zc_display_value,
+              GPS: data.GPS,
+              Vendor: data.Vendor.zc_display_value,
+              st_Trailer: data.st_Trailer.zc_display_value,
+              Current_Position: data.Current_Position,
+              Vendor_Status: data.Vendor_Status?.zc_display_value,
+              nd_Trailer: data.nd_Trailer?.zc_display_value,
+              ETA: data?.ETA ? dayjs(data.ETA, "DD-MMM-YYYY") : null,
+              Horse_Contact_Number: data.Horse_Contact_Number,
+              Tonnage: data.Tonnage,
+              LoadingSiteArrival: data?.LoadingSiteArrival ? dayjs(data.LoadingSiteArrival, "DD-MMM-YYYY") : null,
+              Dispatcher: data.Dispatcher,
+              Vendor_Credit: data.Vendor_Credit,
+              Driver: data.Driver?.zc_display_value,
+              Passport: data.Passport?.zc_display_value,
+              Customer_Name: data.Customer_Name?.zc_display_value,
+              Rate_Per_MT: data.Rate_Per_MT,
+              Select_Book: data.Select_Book,
+              Transporter: data.Transporter,
+              Current_Position: data.Current_Position
+            }))
+          }
+        } catch (error) {
+          console.log("Error fetching record");
+        }
+
+      }
+      initiate();
+    }
+
+  }, [bookingId])
+
+
+
   const [messageApi, contextHolder] = message.useMessage();
   const success = () => {
     messageApi.open({
       type: 'loading',
-      content: 'Adding Record...',
+      content: editMode ? "Updating Record..." : "Adding Record...",
       duration: 0
     })
   }
 
   const submitted = () => {
-    messageApi.info("Data Successfullly Added!");
+    messageApi.info(editMode ? "Data Updated Successfully!": "Data Successfullly Added!");
   }
   const handleInputChange = (field, value) => {
     setBookingObj((prev) => ({
@@ -90,7 +152,6 @@ const App = () => {
   };
 
   useEffect(() => {
-
     const fetchRecords = async (reportName, criteria = null) => {
       try {
         const query = new URLSearchParams({ reportName, ...(criteria && { criteria }) });
@@ -339,6 +400,7 @@ const App = () => {
       Transporter: "",
       Current_Position: ""
     }))
+    setCurrencyType(baseCurrency);
   }
   // Handle Submission
   const onSubmit = async () => {
@@ -351,7 +413,7 @@ const App = () => {
       const vendorStatusId = vendorStatusArr.find(i => i.Vendor_Status === bookingObj.Vendor_Status)?.ID || "";
       const trailer1ID = trailerArr.find(i => i.Trailer === bookingObj.st_Trailer)?.ID || "";
       const trailer2ID = trailerArr.find(i => i.Trailer === bookingObj.nd_Trailer)?.ID || "";
-      const driverID = driverObj.find(i => i.Name_Driver.zc_display_value === bookingObj.Driver)?.ID || "";
+      const driverID = driverObj.find(i => i.Name_Driver.zc_display_value.trim() == bookingObj.Driver.trim())?.ID || "";
       const customerID = customerArr.find(i => i.Customer_Name === bookingObj.Customer_Name)?.ID || "";
       const contactPersonName = bookingObj.Horse_Contact_Person;
       const etaDate = bookingObj.ETA.format("DD-MMM-YYYY");
@@ -375,24 +437,50 @@ const App = () => {
         ETA: etaDate,
         LoadingSiteArrival: loadingArrivalDate,
         Vendor_Bill_String: currencies.find(c => c.code === currencyType).symbol + " " + bookingObj.Vendor_Bill,
-        Rate_Per_MT_String: currencies.find(c => c.code === currencyType).symbol + " " + bookingObj.Rate_Per_MT
+        Rate_Per_MT_String: currencies.find(c => c.code === currencyType).symbol + " " + bookingObj.Rate_Per_MT,
+        skip_workflow: ["form_workflow"],
       };
-      try {
-        const response = await fetch("api/addBooking", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(bookingData)
-        })
-        console.log(response);
-        setSubmitLoading(false);
-        messageApi.destroy();
-        clearAll();
-        submitted();
-      } catch (error) {
-        console.log(error);
+      if (editMode) {
+        try {
+          const response = await fetch(`/api/updateRecord?id=${bookingId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(bookingData)
+          })
+          if (!response.ok) {
+            throw new Error("Failed to update record");
+          }
+
+          const result = await response.json();
+          console.log("Record updated:", result);
+          setSubmitLoading(false);
+          messageApi.destroy();
+          submitted();
+        } catch (error) {
+          console.log(error);
+        }
       }
+      else {
+        try {
+          const response = await fetch("api/addBooking", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(bookingData)
+          })
+          console.log(response);
+          setSubmitLoading(false);
+          messageApi.destroy();
+          clearAll();
+          submitted();
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
 
     } catch (error) {
       console.error("Error in onSubmit:", error);
@@ -415,12 +503,7 @@ const App = () => {
                 <div className='border-b bortder-t p-2 font-bold text-lg bg-slate-50'>Load Details</div>
                 <div className="mt-3">
                   <Flex gap={60}>
-                    <Form.Item label='Shipment #' className='w-[300px]' rules={
-                      {
-                        required: true,
-                        message: "Please select Shipment"
-                      }
-                    }>
+                    <Form.Item label='Shipment #' className='w-[300px]' required>
                       <Select
                         showSearch
                         options={shipments}
@@ -696,7 +779,7 @@ const App = () => {
                 </div>
                 <div className='flex gap-3 justify-center'>
                   {contextHolder}
-                  <Button type='primary' disabled={submitLoading} htmlType='submit'>Submit</Button>
+                  <Button type='primary' disabled={submitLoading} htmlType='submit'>{editMode ? "Update" : "Submit"}</Button>
                   <Button onClick={clearAll} variant='outlined' htmlType='reset'>Reset</Button>
                 </div>
               </Form>

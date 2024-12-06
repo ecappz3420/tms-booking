@@ -30,7 +30,7 @@ export async function refreshAccessToken() {
 export async function getRecords(accessToken, reportName, criteria) {
     try {
         const params = criteria ? { criteria } : {};
-        const response = await axios.get(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/${reportName}?criteria=${criteria}`, {
+        const response = await axios.get(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/${reportName}?max_records=1000&criteria=${criteria}`, {
             headers: {
                 Authorization: `Zoho-oauthtoken ${accessToken}`,
                 Accept: 'application/json'
@@ -39,6 +39,24 @@ export async function getRecords(accessToken, reportName, criteria) {
         return response.data;
     } catch (error) {
         console.log("Error getting records :" + error);
+    }
+}
+
+export async function updateRecord(accessToken, data, id) {
+    try {
+        const formData = {
+            data: data
+        }
+        const response = await axios.patch(`https://www.zohoapis.com/creator/v2.1/data/dhaqane/dlz/report/All_Booking/${id}`, formData, {
+            headers: {
+                Authorization: `Zoho-oauthtoken ${accessToken}`,
+                Accept: 'application/json'
+            }
+        })
+        return response.data;
+    } catch (error) {
+        console.error("Error updating record:", error.response?.data || error.message);
+        return { error: error.response?.data || error.message };
     }
 }
 
@@ -53,9 +71,10 @@ export async function addBooking(accessToken, data) {
                 Accept: 'application/json'
             }
         })
-        return response;
+        return response.data;
     } catch (error) {
-        console.log(error);
+        console.error("Error updating record:", error.response?.data || error.message);
+        return { error: error.response?.data || error.message };
     }
 }
 

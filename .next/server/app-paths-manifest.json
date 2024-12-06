@@ -1,4 +1,5 @@
 {
-  "/api/addBooking/route": "app/api/addBooking/route.js",
+  "/api/updateRecord/route": "app/api/updateRecord/route.js",
+  "/api/zoho/route": "app/api/zoho/route.js",
   "/page": "app/page.js"
 }

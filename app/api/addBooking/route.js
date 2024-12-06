@@ -7,7 +7,7 @@ export async function POST(req) {
         const formData = await req.json();
         const response = await addBooking(access_token, formData);
         console.log(response);
-        return NextResponse.json(response.data);
+        return NextResponse.json(response);
     } catch (error) {
         console.error('Error creating issue:', error);
         return NextResponse.json('Error creating issue');

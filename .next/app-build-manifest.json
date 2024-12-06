@@ -21,6 +21,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/addBooking/route.js"
+    ],
+    "/api/updateRecord/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/updateRecord/route.js"
     ]
   }
 }
