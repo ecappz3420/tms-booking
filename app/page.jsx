@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Button, DatePicker, Flex, Form, Input, InputNumber, message, Modal, Select } from 'antd';
 import Loading from './Loading';
 import currencies from './currencylist';
@@ -88,7 +88,6 @@ const App = () => {
           if (result.records.code === 3000) {
             setEditMode(true);
             const data = result.records.data[0];
-            console.log(data);
             setBookingObj(prev => ({
               ...prev,
               Shipment: data.Shipment?.zc_display_value,
@@ -142,7 +141,7 @@ const App = () => {
   }
 
   const submitted = () => {
-    messageApi.info(editMode ? "Data Updated Successfully!": "Data Successfullly Added!");
+    messageApi.info(editMode ? "Data Updated Successfully!" : "Data Successfullly Added!");
   }
   const handleInputChange = (field, value) => {
     setBookingObj((prev) => ({
@@ -498,58 +497,253 @@ const App = () => {
           </>
         )
           : (
-            <div className='inter p-2'>
-              <Form layout='vertical' onFinish={onSubmit}>
-                <div className='border-b bortder-t p-2 font-bold text-lg bg-slate-50'>Load Details</div>
-                <div className="mt-3">
-                  <Flex gap={60}>
-                    <Form.Item label='Shipment #' className='w-[300px]' required>
-                      <Select
-                        showSearch
-                        options={shipments}
-                        placeholder="Shipment #"
-                        allowClear
-                        value={bookingObj.Shipment}
-                        onChange={(value) => handleShipment(value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Commodity' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Commodity}
-                        onChange={(e) => handleInputChange("Commodity", e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Origin' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Origin}
-                        onChange={(e) => handleInputChange("Origin", e.target.value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Service Location' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Service_Location}
-                        onChange={(e) => handleInputChange("Service_Location", e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Destination' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Destination}
-                        onChange={(e) => handleInputChange("Destination", e.target.value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Vendor Bill' className='w-[300px]'>
-                      <InputNumber
-                        addonBefore={currencyDropdown}
-                        value={bookingObj.Vendor_Bill}
-                        onChange={(value) => handleInputChange("Vendor_Bill", value)}
-                      />
-                      {baseCurrency != currencyType &&
-                        (
-                          <div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
+            <Suspense fallback={<Loading/>}>
+              <div className='inter p-2'>
+                <Form layout='vertical' onFinish={onSubmit}>
+                  <div className='border-b bortder-t p-2 font-bold text-lg bg-slate-50'>Load Details</div>
+                  <div className="mt-3">
+                    <Flex gap={60}>
+                      <Form.Item label='Shipment #' className='w-[300px]' required>
+                        <Select
+                          showSearch
+                          options={shipments}
+                          placeholder="Shipment #"
+                          allowClear
+                          value={bookingObj.Shipment}
+                          onChange={(value) => handleShipment(value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Commodity' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Commodity}
+                          onChange={(e) => handleInputChange("Commodity", e.target.value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Origin' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Origin}
+                          onChange={(e) => handleInputChange("Origin", e.target.value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Service Location' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Service_Location}
+                          onChange={(e) => handleInputChange("Service_Location", e.target.value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Destination' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Destination}
+                          onChange={(e) => handleInputChange("Destination", e.target.value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Vendor Bill' className='w-[300px]'>
+                        <InputNumber
+                          addonBefore={currencyDropdown}
+                          value={bookingObj.Vendor_Bill}
+                          onChange={(value) => handleInputChange("Vendor_Bill", value)}
+                        />
+                        {baseCurrency != currencyType &&
+                          (
+                            <div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
+                              <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                              <a onClick={() => setOpenPopup(true)}>Edit</a>
+                              <Modal
+                                open={openPopup}
+                                title="Modify Currency"
+                                onClose={() => setOpenPopup(false)}
+                                onOk={handleCurrencyModify}
+                                onCancel={() => setOpenPopup(false)}>
+                                <div>
+                                  <InputNumber
+                                    value={modifyCurrency}
+                                    onChange={(value) => setModifyCUrrency(value)} />
+                                </div>
+                              </Modal>
+                            </div>
+                          )
+                        }
+
+                      </Form.Item>
+                    </Flex>
+                  </div>
+                  <div className='border-b border-t p-2 font-bold text-lg bg-slate-50'>Truck Details</div>
+                  <div className="mt-3">
+                    <Flex gap={60}>
+                      <Form.Item
+                        label='Horse'
+                        className='w-[300px]'
+                      >
+                        <Select
+                          options={horses}
+                          showSearch
+                          allowClear
+                          value={bookingObj.Horse}
+                          onChange={handleHorseChange}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Vendor' className='w-[300px]'>
+                        <Select
+                          options={vendors}
+                          showSearch
+                          allowClear
+                          value={bookingObj.Vendor}
+                          onChange={(value) => handleInputChange("Vendor", value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Vendor Status' className='w-[300px]'>
+                        <Select
+                          options={vendorStatus}
+                          showSearch
+                          allowClear
+                          value={bookingObj.Vendor_Status}
+                          onChange={(value) => handleInputChange("Vendor_Status", value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='1st Trailer #' className='w-[300px]'>
+                        <Select
+                          options={trailers}
+                          showSearch
+                          allowClear
+                          value={bookingObj.st_Trailer}
+                          onChange={(value) => handleInputChange("st_Trailer", value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='2nd Trailer #' className='w-[300px]'>
+                        <Select
+                          options={trailers}
+                          showSearch
+                          allowClear
+                          value={bookingObj.nd_Trailer}
+                          onChange={(value) => handleInputChange("nd_Trailer", value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Tonnage' className='w-[300px]'>
+                        <Input
+                          type='number'
+                          className='w-[300px]'
+                          value={bookingObj.Tonnage}
+                          onChange={(e) => handleInputChange("Tonnage", e.target.value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Contact Person' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Horse_Contact_Person}
+                          onChange={(e) => handleInputChange("Horse_Contact_Person", e.target.value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Contact Number'>
+                        <PhoneInput
+                          country={'zm'}
+                          className='w-[300px]'
+                          value={bookingObj.Horse_Contact_Number}
+                          onChange={(value) => handleInputChange("Horse_Contact_Number", "+" + value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='GPS' className='w-[300px]' required>
+                        <Input
+                          value={bookingObj.GPS}
+                          onChange={(e) => handleInputChange("GPS", e.target.value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Current Position' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Current_Position}
+                          onChange={(e) => handleInputChange("Current_Position", e.target.value)} />
+                      </Form.Item>
+                      <Form.Item label='ETA' className='w-[300px]'>
+                        <DatePicker
+                          className='w-[300px]'
+                          format="DD-MMM-YYYY"
+                          value={bookingObj.ETA}
+                          onChange={(value) => handleInputChange("ETA", value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Loading Site Arrival' className='w-[300px]'>
+                        <DatePicker
+                          className='w-[300px]'
+                          format="DD-MMM-YYYY"
+                          value={bookingObj.LoadingSiteArrival}
+                          onChange={(value) => handleInputChange("LoadingSiteArrival", value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <div className='border-b border-t p-2 mb-3 font-bold text-lg bg-slate-50'>Dispatcher Details</div>
+                    <Flex gap={60}>
+                      <Form.Item label='Dispatcher' className='w-[300px]'>
+                        <Select
+                          options={dispatchers}
+                          showSearch
+                          allowClear
+                          value={bookingObj.Dispatcher}
+                          onChange={handleDispathcer}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Vendor Credit' className='w-[300px]'>
+                        <InputNumber
+                          className='w-[300px]'
+                          min={0}
+                          max={100}
+                          formatter={(value) => `${value}%`}
+                          value={bookingObj.Vendor_Credit}
+                          onChange={(value) => handleInputChange("Vendor_Credit", value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <div className='border-b border-t p-2 mb-3 font-bold text-lg bg-slate-50'>Driver Details</div>
+                    <Flex gap={60}>
+                      <Form.Item label='Driver' className='w-[300px]'>
+                        <Select
+                          options={drivers}
+                          allowClear
+                          showSearch
+                          value={bookingObj.Driver}
+                          onChange={handleDriverChange}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Passport' className='w-[300px]'>
+                        <Select
+                          options={passports}
+                          allowClear
+                          showSearch
+                          value={bookingObj.Passport}
+                          onChange={(value) => handleInputChange("Passport", value)}
+                        />
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Select Book' className='w-[300px]'>
+                        <Input
+                          value={bookingObj.Select_Book}
+                          onChange={(e) => handleInputChange("Select_Book", e.target.value)}
+                        />
+                      </Form.Item>
+                      <Form.Item label='Customer Name' className='w-[300px]'>
+                        <Select
+                          options={customers}
+                          allowClear
+                          showSearch
+                          value={bookingObj.Customer_Name}
+                          onChange={(value) => handleInputChange("Customer_Name", value)} />
+                      </Form.Item>
+                      <Form.Item label='Rate Per MT' className='w-[300px]'>
+                        <InputNumber
+                          addonBefore={currencyDropdown}
+                          className='w-[300px]'
+                          value={bookingObj.Rate_Per_MT}
+                          onChange={(value) => handleInputChange("Rate_Per_MT", value)} />
+                        {baseCurrency != currencyType &&
+                          (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
                             <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
                             <a onClick={() => setOpenPopup(true)}>Edit</a>
                             <Modal
@@ -561,229 +755,37 @@ const App = () => {
                               <div>
                                 <InputNumber
                                   value={modifyCurrency}
-                                  onChange={(value) => setModifyCUrrency(value)} />
+                                  onChange={(value) => setModifyCUrrency(value)}
+                                  className='w-[200px]' />
                               </div>
                             </Modal>
-                          </div>
-                        )
-                      }
+                          </div>)
+                        }
+                      </Form.Item>
+                    </Flex>
+                    <Flex gap={60}>
+                      <Form.Item label='Transporter' className='w-[300px]'>
+                        <Select
+                          options={[
+                            {
+                              label: "DHAQANE",
+                              value: "DHAQANE"
+                            }
+                          ]}
+                          value={bookingObj.Transporter}
+                          onChange={(value) => handleInputChange("Transporter", value)} />
+                      </Form.Item>
+                    </Flex>
+                  </div>
+                  <div className='flex gap-3 justify-center'>
+                    {contextHolder}
+                    <Button type='primary' disabled={submitLoading} htmlType='submit'>{editMode ? "Update" : "Submit"}</Button>
+                    <Button onClick={clearAll} variant='outlined' htmlType='reset'>Reset</Button>
+                  </div>
+                </Form>
+              </div>
+            </Suspense>
 
-                    </Form.Item>
-                  </Flex>
-                </div>
-                <div className='border-b border-t p-2 font-bold text-lg bg-slate-50'>Truck Details</div>
-                <div className="mt-3">
-                  <Flex gap={60}>
-                    <Form.Item
-                      label='Horse'
-                      className='w-[300px]'
-                    >
-                      <Select
-                        options={horses}
-                        showSearch
-                        allowClear
-                        value={bookingObj.Horse}
-                        onChange={handleHorseChange}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Vendor' className='w-[300px]'>
-                      <Select
-                        options={vendors}
-                        showSearch
-                        allowClear
-                        value={bookingObj.Vendor}
-                        onChange={(value) => handleInputChange("Vendor", value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Vendor Status' className='w-[300px]'>
-                      <Select
-                        options={vendorStatus}
-                        showSearch
-                        allowClear
-                        value={bookingObj.Vendor_Status}
-                        onChange={(value) => handleInputChange("Vendor_Status", value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='1st Trailer #' className='w-[300px]'>
-                      <Select
-                        options={trailers}
-                        showSearch
-                        allowClear
-                        value={bookingObj.st_Trailer}
-                        onChange={(value) => handleInputChange("st_Trailer", value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='2nd Trailer #' className='w-[300px]'>
-                      <Select
-                        options={trailers}
-                        showSearch
-                        allowClear
-                        value={bookingObj.nd_Trailer}
-                        onChange={(value) => handleInputChange("nd_Trailer", value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Tonnage' className='w-[300px]'>
-                      <Input
-                        type='number'
-                        className='w-[300px]'
-                        value={bookingObj.Tonnage}
-                        onChange={(e) => handleInputChange("Tonnage", e.target.value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Contact Person' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Horse_Contact_Person}
-                        onChange={(e) => handleInputChange("Horse_Contact_Person", e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Contact Number'>
-                      <PhoneInput
-                        country={'zm'}
-                        className='w-[300px]'
-                        value={bookingObj.Horse_Contact_Number}
-                        onChange={(value) => handleInputChange("Horse_Contact_Number", "+" + value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='GPS' className='w-[300px]' required>
-                      <Input
-                        value={bookingObj.GPS}
-                        onChange={(e) => handleInputChange("GPS", e.target.value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Current Position' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Current_Position}
-                        onChange={(e) => handleInputChange("Current_Position", e.target.value)} />
-                    </Form.Item>
-                    <Form.Item label='ETA' className='w-[300px]'>
-                      <DatePicker
-                        className='w-[300px]'
-                        format="DD-MMM-YYYY"
-                        value={bookingObj.ETA}
-                        onChange={(value) => handleInputChange("ETA", value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Loading Site Arrival' className='w-[300px]'>
-                      <DatePicker
-                        className='w-[300px]'
-                        format="DD-MMM-YYYY"
-                        value={bookingObj.LoadingSiteArrival}
-                        onChange={(value) => handleInputChange("LoadingSiteArrival", value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <div className='border-b border-t p-2 mb-3 font-bold text-lg bg-slate-50'>Dispatcher Details</div>
-                  <Flex gap={60}>
-                    <Form.Item label='Dispatcher' className='w-[300px]'>
-                      <Select
-                        options={dispatchers}
-                        showSearch
-                        allowClear
-                        value={bookingObj.Dispatcher}
-                        onChange={handleDispathcer}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Vendor Credit' className='w-[300px]'>
-                      <InputNumber
-                        className='w-[300px]'
-                        min={0}
-                        max={100}
-                        formatter={(value) => `${value}%`}
-                        value={bookingObj.Vendor_Credit}
-                        onChange={(value) => handleInputChange("Vendor_Credit", value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <div className='border-b border-t p-2 mb-3 font-bold text-lg bg-slate-50'>Driver Details</div>
-                  <Flex gap={60}>
-                    <Form.Item label='Driver' className='w-[300px]'>
-                      <Select
-                        options={drivers}
-                        allowClear
-                        showSearch
-                        value={bookingObj.Driver}
-                        onChange={handleDriverChange}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Passport' className='w-[300px]'>
-                      <Select
-                        options={passports}
-                        allowClear
-                        showSearch
-                        value={bookingObj.Passport}
-                        onChange={(value) => handleInputChange("Passport", value)}
-                      />
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Select Book' className='w-[300px]'>
-                      <Input
-                        value={bookingObj.Select_Book}
-                        onChange={(e) => handleInputChange("Select_Book", e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item label='Customer Name' className='w-[300px]'>
-                      <Select
-                        options={customers}
-                        allowClear
-                        showSearch
-                        value={bookingObj.Customer_Name}
-                        onChange={(value) => handleInputChange("Customer_Name", value)} />
-                    </Form.Item>
-                    <Form.Item label='Rate Per MT' className='w-[300px]'>
-                      <InputNumber
-                        addonBefore={currencyDropdown}
-                        className='w-[300px]'
-                        value={bookingObj.Rate_Per_MT}
-                        onChange={(value) => handleInputChange("Rate_Per_MT", value)} />
-                      {baseCurrency != currencyType &&
-                        (<div className='p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]'>
-                          <a className=''>{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
-                          <a onClick={() => setOpenPopup(true)}>Edit</a>
-                          <Modal
-                            open={openPopup}
-                            title="Modify Currency"
-                            onClose={() => setOpenPopup(false)}
-                            onOk={handleCurrencyModify}
-                            onCancel={() => setOpenPopup(false)}>
-                            <div>
-                              <InputNumber
-                                value={modifyCurrency}
-                                onChange={(value) => setModifyCUrrency(value)}
-                                className='w-[200px]' />
-                            </div>
-                          </Modal>
-                        </div>)
-                      }
-                    </Form.Item>
-                  </Flex>
-                  <Flex gap={60}>
-                    <Form.Item label='Transporter' className='w-[300px]'>
-                      <Select
-                        options={[
-                          {
-                            label: "DHAQANE",
-                            value: "DHAQANE"
-                          }
-                        ]}
-                        value={bookingObj.Transporter}
-                        onChange={(value) => handleInputChange("Transporter", value)} />
-                    </Form.Item>
-                  </Flex>
-                </div>
-                <div className='flex gap-3 justify-center'>
-                  {contextHolder}
-                  <Button type='primary' disabled={submitLoading} htmlType='submit'>{editMode ? "Update" : "Submit"}</Button>
-                  <Button onClick={clearAll} variant='outlined' htmlType='reset'>Reset</Button>
-                </div>
-              </Form>
-            </div>
           )
       }
     </>
