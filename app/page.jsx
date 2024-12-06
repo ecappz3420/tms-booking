@@ -430,6 +430,7 @@ const MyComponent = () => {
         Passport: driverID,
         Customer_Name: customerID,
         Approval_Status: "Pending",
+        Vendor_Credit : `%${bookingObj.Vendor_Credit}`,
         Horse_Contact_Person: {
           first_name: contactPersonName,
           last_name: ""
