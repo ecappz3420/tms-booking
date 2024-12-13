@@ -9,16 +9,16 @@ const Loading = () => {
             </div>
             <div className="flex flex-col gap-[50px] mt-3">
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                 </div>
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                 </div>
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                    
                 </div>
             </div>
@@ -27,19 +27,19 @@ const Loading = () => {
             </div>
             <div className="flex flex-col gap-[50px] mt-3">
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                 </div>
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                 </div>
                 <div className='flex gap-[100px]'>
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
-                    <Skeleton.Input active style={{ width: "300px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
+                    <Skeleton.Input active style={{ width: "250px" }} />
                 </div>
             </div>
         </div>

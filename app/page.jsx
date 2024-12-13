@@ -34,15 +34,19 @@ const MyComponent = () => {
   const [horseArr, setHorseArr] = useState([]);
   const [isLoading, setLoading] = useState(true);
   const [currencyRates, setCurrencyRates] = useState([]);
-  const [currencyType, setCurrencyType] = useState("USD");
-  const [baseCurrency] = useState("USD");
+  const [currencyType, setCurrencyType] = useState("ZMW");
+  const [baseCurrency, setBaseCurrency] = useState("USD");
   const [currencyValue, setCurrencyValue] = useState(0);
   const [openPopup, setOpenPopup] = useState(false);
-  const [modifyCurrency, setModifyCUrrency] = useState(0);
+  const [modifyCurrency, setModifyCurrency] = useState(0);
   const [trailerArr, setTrailerArr] = useState([]);
   const [customerArr, setCustomerArr] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [convertedCurrrencyValue, setConvertedCurrencyValue] = useState(0);
+  const [vendorBill, setVendorBill] = useState(null);
+  const [ratePerMt, setRatePerMt] = useState(null);
+  const [ratePerMtConverted, setRatePerMtConverted] = useState(null);
   const [dispatchers] = useState([
     {
       label: "DLZ",
@@ -58,6 +62,7 @@ const MyComponent = () => {
   const bookingId = params?.get("bookingId");
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
+
   useEffect(() => {
     if (bookingId) {
       const initiate = async () => {
@@ -121,6 +126,19 @@ const MyComponent = () => {
 
   const submitted = (msg) => messageApi.info(msg);
 
+  const fetchCurrency = async () => {
+    try {
+      const response = await fetch(
+        `https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${baseCurrency}`
+      );
+      const result = await response.json();
+      setCurrencyValue(() => result.conversion_rates[currencyType]);
+      setModifyCurrency(() => result.conversion_rates[currencyType]);
+    } catch (error) {
+      console.log("Error Fething Currency: ", error);
+    }
+  };
+
   useEffect(() => {
     const fetchRecords = async (reportName, criteria = null) => {
       try {
@@ -149,6 +167,7 @@ const MyComponent = () => {
       try {
         // Fetch Shipments
         setLoading(true);
+        await fetchCurrency();
         const shipmentResponse = await fetchRecords(
           "All_Shipments",
           `(Approval_Status == "Approved")`
@@ -252,8 +271,8 @@ const MyComponent = () => {
     init();
   }, []);
 
-  const handleCurrencyChange = async (value) => {
-    setCurrencyType(value);
+  const handleBaseCurrencyChange = async (value) => {
+    setBaseCurrency(value);
     try {
       const config = {
         method: "GET",
@@ -264,8 +283,20 @@ const MyComponent = () => {
         config
       );
       const result = await response.json();
-      setCurrencyValue(result.conversion_rates[baseCurrency]);
-      setModifyCUrrency(result.conversion_rates[baseCurrency]);
+      setCurrencyValue(result.conversion_rates[currencyType]);
+      setModifyCurrency(result.conversion_rates[currencyType]);
+      setConvertedCurrencyValue(
+        vendorBill
+          ? parseFloat(result.conversion_rates[currencyType]) *
+              parseFloat(vendorBill)
+          : 0
+      );
+      setRatePerMtConverted(() =>
+        ratePerMt
+          ? parseFloat(result.conversion_rates[currencyType]) *
+            parseFloat(ratePerMt)
+          : 0
+      );
     } catch (error) {
       console.log(error);
     }
@@ -273,13 +304,66 @@ const MyComponent = () => {
   const handleCurrencyModify = () => {
     setCurrencyValue(modifyCurrency);
     setOpenPopup(false);
+    setConvertedCurrencyValue(() =>
+      vendorBill ? parseFloat(modifyCurrency) * parseFloat(vendorBill) : 0
+    );
+    setRatePerMtConverted(() =>
+      ratePerMt ? parseFloat(modifyCurrency) * parseFloat(ratePerMt) : 0
+    );
   };
+
   const currencyDropdown = (
+    <Select
+      style={{ width: 80 }}
+      value={baseCurrency}
+      onChange={handleBaseCurrencyChange}
+      defaultValue="USD"
+      options={currencyRates}
+      showSearch
+    />
+  );
+  const handleCurrencyChange = async (value) => {
+    setCurrencyType(value);
+    try {
+      const config = {
+        method: "GET",
+        accept: "application/json",
+      };
+      const response = await fetch(
+        `https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${baseCurrency}`,
+        config
+      );
+      const result = await response.json();
+      setCurrencyValue(result.conversion_rates[value]);
+      setModifyCurrency(result.conversion_rates[value]);
+      setConvertedCurrencyValue(() =>
+        vendorBill
+          ? parseFloat(result.conversion_rates[value]) * parseFloat(vendorBill)
+          : 0
+      );
+      setRatePerMtConverted(() =>
+        ratePerMt
+          ? parseFloat(result.conversion_rates[value] * parseFloat(ratePerMt))
+          : 0
+      );
+      console.log(result.conversion_rates[value], ratePerMt);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleVendorBillChange = (value) => {
+    setConvertedCurrencyValue(() => {
+      return value ? parseFloat(value) * parseFloat(modifyCurrency) : 0;
+    });
+    setVendorBill(value);
+  };
+
+  const currencySelectable = (
     <Select
       style={{ width: 80 }}
       value={currencyType}
       onChange={handleCurrencyChange}
-      defaultValue="USD"
       options={currencyRates}
       showSearch
     />
@@ -360,9 +444,11 @@ const MyComponent = () => {
     });
   };
 
-  const currencySymbolChange = (value) => {
-    const symbol = currencies.find((c) => c.code === currencyType).symbol;
-    return value + " " + symbol;
+  const handleRatePerMT = (value) => {
+    setRatePerMt(value);
+    setRatePerMtConverted(() =>
+      value ? parseFloat(value) * parseFloat(modifyCurrency) : 0
+    );
   };
 
   const onFinish = async (obj) => {
@@ -400,22 +486,24 @@ const MyComponent = () => {
       Passport: driverID,
       Customer_Name: customerID,
       Approval_Status: "Pending",
+      Status: "Not Moved to Tracking",
       Vendor_Credit: `${obj.Vendor_Credit}%`,
+      Vendor_Bill: vendorBill,
+      Rate_Per_MT: ratePerMt,
       Horse_Contact_Person: {
         first_name: contactPersonName,
         last_name: "",
       },
       ETA: etaDate,
       LoadingSiteArrival: loadingArrivalDate,
-      Vendor_Bill_String:
+      Vendor_Bill_Converted:
         currencies.find((c) => c.code === currencyType).symbol +
         " " +
-        obj.Vendor_Bill,
-      Rate_Per_MT_String:
+        convertedCurrrencyValue,
+      Rate_Per_MT_Converted:
         currencies.find((c) => c.code === currencyType).symbol +
         " " +
-        obj.Rate_Per_MT,
-      skip_workflow: ["all"],
+        ratePerMtConverted,
     };
     if (editMode) {
       try {
@@ -492,7 +580,7 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Shipment #"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Shipment"
                   rules={[
                     { required: true, message: "Please select the Shipment" },
@@ -508,7 +596,7 @@ const MyComponent = () => {
                 </Form.Item>
                 <Form.Item
                   label="Commodity"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Commodity"
                   rules={[{ required: true, message: "Please fill the value" }]}
                 >
@@ -517,7 +605,7 @@ const MyComponent = () => {
                 <Form.Item
                   label="Origin"
                   name="Origin"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   rules={[{ required: true, message: "Please fill the value" }]}
                 >
                   <Input />
@@ -527,33 +615,41 @@ const MyComponent = () => {
                 <Form.Item
                   label="Service Location"
                   name="Service_Location"
-                  className="w-[300px]"
+                  className="w-[250px]"
                 >
                   <Input />
                 </Form.Item>
                 <Form.Item
                   label="Destination"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Destination"
                 >
                   <Input />
                 </Form.Item>
               </Flex>
-              <Flex>
+              <Flex gap={60}>
+                <Form.Item
+                  label="Vendor Bill"
+                  className="w-[250px]"
+                  name="Vendor_Bill"
+                >
+                  <InputNumber
+                    addonBefore={currencyDropdown}
+                    onChange={handleVendorBillChange}
+                    className="w-[250px]"
+                  />
+                </Form.Item>
                 <div>
-                  <Form.Item
-                    label="Vendor Bill"
-                    className="w-[300px] mb-2"
-                    name="Vendor_Bill"
-                  >
+                  <Form.Item label="Vendor Bill Converted" className="mb-1">
                     <InputNumber
-                      addonBefore={currencyDropdown}
-                      formatter={currencySymbolChange}
+                      addonBefore={currencySelectable}
+                      className="w-[250px]"
+                      value={convertedCurrrencyValue}
                     />
                   </Form.Item>
                   {baseCurrency != currencyType && (
                     <div className="p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]">
-                      <a className="">{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                      <a className="">{`1 ${baseCurrency} = ${currencyValue} ${currencyType}`}</a>
                       <a onClick={() => setOpenPopup(true)}>Edit</a>
                       <Modal
                         open={openPopup}
@@ -565,7 +661,7 @@ const MyComponent = () => {
                         <div>
                           <InputNumber
                             value={modifyCurrency}
-                            onChange={(value) => setModifyCUrrency(value)}
+                            onChange={(value) => setModifyCurrency(value)}
                           />
                         </div>
                       </Modal>
@@ -581,7 +677,7 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Horse"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Horse"
                   rules={[{ required: true, message: "Please select a Horse" }]}
                 >
@@ -592,12 +688,12 @@ const MyComponent = () => {
                     onChange={handleHorseChange}
                   />
                 </Form.Item>
-                <Form.Item label="Vendor" name="Vendor" className="w-[300px]">
+                <Form.Item label="Vendor" name="Vendor" className="w-[250px]">
                   <Select options={vendors} showSearch allowClear />
                 </Form.Item>
                 <Form.Item
                   label="Vendor Status"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Vendor_Status"
                 >
                   <Select options={vendorStatus} showSearch allowClear />
@@ -606,31 +702,31 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="1st Trailer #"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="st_Trailer"
                 >
                   <Select options={trailers} showSearch allowClear />
                 </Form.Item>
                 <Form.Item
                   label="2nd Trailer #"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="nd_Trailer"
                 >
                   <Select options={trailers} showSearch allowClear />
                 </Form.Item>
                 <Form.Item
                   label="Tonnage"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Tonnage"
                   rules={[{ required: true, message: "Please fill the value" }]}
                 >
-                  <Input type="number" className="w-[300px]" />
+                  <Input type="number" className="w-[250px]" />
                 </Form.Item>
               </Flex>
               <Flex gap={60}>
                 <Form.Item
                   label="Contact Person"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Horse_Contact_Person"
                   rules={[{ required: true, message: "Please fill the value" }]}
                 >
@@ -639,7 +735,8 @@ const MyComponent = () => {
                 <Form.Item label="Contact Number" name="Horse_Contact_Number">
                   <PhoneInput
                     country={"zm"}
-                    className="w-[300px]"
+                    className="w-[250px]"
+                    inputStyle={{ width: 250 }}
                     rules={[
                       { required: true, message: "Please fill the value" },
                     ]}
@@ -647,7 +744,7 @@ const MyComponent = () => {
                 </Form.Item>
                 <Form.Item
                   label="GPS"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   rules={[{ required: true, message: "Please fill the value" }]}
                   name="GPS"
                 >
@@ -657,15 +754,15 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Current Position"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Current_Position"
                   rules={[{ required: true, message: "Please fill the value" }]}
                 >
                   <Input />
                 </Form.Item>
-                <Form.Item label="ETA" className="w-[300px]" name="ETA">
+                <Form.Item label="ETA" className="w-[250px]" name="ETA">
                   <DatePicker
-                    className="w-[300px]"
+                    className="w-[250px]"
                     format="DD-MMM-YYYY"
                     rules={[
                       { required: true, message: "Please fill the value" },
@@ -674,10 +771,10 @@ const MyComponent = () => {
                 </Form.Item>
                 <Form.Item
                   label="Loading Site Arrival"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="LoadingSiteArrival"
                 >
-                  <DatePicker className="w-[300px]" format="DD-MMM-YYYY" />
+                  <DatePicker className="w-[250px]" format="DD-MMM-YYYY" />
                 </Form.Item>
               </Flex>
               <div className="border-b border-t p-2 mb-3 font-bold text-lg bg-slate-50">
@@ -686,7 +783,7 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Dispatcher"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Dispatcher"
                   rules={[
                     { required: true, message: "Please select the Dispatcher" },
@@ -700,11 +797,11 @@ const MyComponent = () => {
                 </Form.Item>
                 <Form.Item
                   label="Vendor Credit"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Vendor_Credit"
                 >
                   <InputNumber
-                    className="w-[300px]"
+                    className="w-[250px]"
                     min={0}
                     max={100}
                     formatter={(value) => `${value}%`}
@@ -717,7 +814,7 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Driver"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Driver"
                   rules={[
                     { required: true, message: "Please select the Driver" },
@@ -732,7 +829,7 @@ const MyComponent = () => {
                 </Form.Item>
                 <Form.Item
                   label="Passport"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Passport"
                   rules={[
                     { required: true, message: "Please select the Passport" },
@@ -740,37 +837,47 @@ const MyComponent = () => {
                 >
                   <Select options={passports} allowClear showSearch />
                 </Form.Item>
-              </Flex>
-              <Flex gap={60}>
                 <Form.Item
                   label="Select Book"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Select_Book"
                 >
                   <Input />
                 </Form.Item>
+              </Flex>
+              <Flex gap={60}>
                 <Form.Item
                   label="Customer Name"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Customer_Name"
                 >
                   <Select options={customers} allowClear showSearch />
                 </Form.Item>
+                <Form.Item
+                  label="Rate Per MT"
+                  className="w-[250px] mb-0"
+                  name="Rate_Per_MT"
+                >
+                  <InputNumber
+                    addonBefore={currencyDropdown}
+                    className="w-[250px]"
+                    onChange={handleRatePerMT}
+                  />
+                </Form.Item>
                 <div>
                   <Form.Item
-                    label="Rate Per MT"
-                    className="w-[300px] mb-0"
-                    name="Rate_Per_MT"
+                    label="Rate Per Mt Converted"
+                    className="w-[250px] mb-1"
                   >
                     <InputNumber
-                      addonBefore={currencyDropdown}
-                      className="w-[300px]"
-                      formatter={currencySymbolChange}
+                      addonBefore={currencySelectable}
+                      value={ratePerMtConverted}
+                      className="w-[250px]"
                     />
                   </Form.Item>
                   {baseCurrency != currencyType && (
                     <div className="p-1 text-xs flex items-center text-blue-500 justify-center gap-[10px]">
-                      <a className="">{`1 ${currencyType} = ${currencyValue} ${baseCurrency}`}</a>
+                      <a className="">{`1 ${baseCurrency} = ${currencyValue} ${currencyType}`}</a>
                       <a onClick={() => setOpenPopup(true)}>Edit</a>
                       <Modal
                         open={openPopup}
@@ -782,7 +889,7 @@ const MyComponent = () => {
                         <div>
                           <InputNumber
                             value={modifyCurrency}
-                            onChange={(value) => setModifyCUrrency(value)}
+                            onChange={(value) => setModifyCurrency(value)}
                             className="w-[200px]"
                           />
                         </div>
@@ -794,7 +901,7 @@ const MyComponent = () => {
               <Flex gap={60}>
                 <Form.Item
                   label="Transporter"
-                  className="w-[300px]"
+                  className="w-[250px]"
                   name="Transporter"
                 >
                   <Select
