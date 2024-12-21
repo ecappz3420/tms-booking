@@ -128,9 +128,7 @@ const MyComponent = () => {
 
   const fetchCurrency = async () => {
     try {
-      const response = await fetch(
-        `https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${baseCurrency}`
-      );
+      const response = await fetch(`api/currency?baseCurrency=${baseCurrency}`);
       const result = await response.json();
       setCurrencyValue(() => result.conversion_rates[currencyType]);
       setModifyCurrency(() => result.conversion_rates[currencyType]);
@@ -279,7 +277,7 @@ const MyComponent = () => {
         accept: "application/json",
       };
       const response = await fetch(
-        `https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${value}`,
+        `api/currency?baseCurrency=${value}`,
         config
       );
       const result = await response.json();
@@ -330,7 +328,7 @@ const MyComponent = () => {
         accept: "application/json",
       };
       const response = await fetch(
-        `https://v6.exchangerate-api.com/v6/6ae9a8e1204b706244608358/latest/${baseCurrency}`,
+        `api/currency?baseCurrency=${baseCurrency}`,
         config
       );
       const result = await response.json();
@@ -346,7 +344,6 @@ const MyComponent = () => {
           ? parseFloat(result.conversion_rates[value] * parseFloat(ratePerMt))
           : 0
       );
-      console.log(result.conversion_rates[value], ratePerMt);
     } catch (error) {
       console.log(error);
     }
@@ -393,6 +390,9 @@ const MyComponent = () => {
           : "",
       Rate_Per_MT: value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : "",
     });
+    setVendorBill(value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : 0);
+    setRatePerMt(value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : 0);
+    setConvertedCurrencyValue(() => value && shipObj.length > 0 ? parseFloat(shipObj[0].Vendor_Bill || 0) * parseFloat(currencyValue) : 0);
   };
 
   const handleDriverChange = (value) => {

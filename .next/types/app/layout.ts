@@ -1,4 +1,4 @@
-// File: E:\My Designs\tms-booking-v18\app\layout.jsx
+// File: /Users/arunkumaranandhan/Downloads/My Projects/tms-booking/app/layout.jsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

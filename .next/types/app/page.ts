@@ -1,4 +1,4 @@
-// File: E:\My Designs\tms-booking-v18\app\page.jsx
+// File: /Users/arunkumaranandhan/Downloads/My Projects/tms-booking/app/page.jsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
