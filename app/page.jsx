@@ -17,7 +17,6 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
-import { set } from "rc-util";
 
 const MyComponent = () => {
   const [shipmentObj, setShipmentObj] = useState([]);
@@ -83,7 +82,7 @@ const MyComponent = () => {
               Origin: data.Origin,
               Service_Location: data.Service_Location,
               Destination: data.Destination,
-              Vendor_Bill: data.Vendor_Bill,
+              Vendor_Bill_Amount: data.Vendor_Bill_Amount,
               Horse: data.Horse?.zc_display_value,
               Horse_Contact_Person: data.Horse_Contact_Person?.zc_display_value,
               GPS: data.GPS,
@@ -103,7 +102,7 @@ const MyComponent = () => {
               Driver: data.Driver?.zc_display_value,
               Passport: data.Passport?.zc_display_value,
               Customer_Name: data.Customer_Name?.zc_display_value,
-              Rate_Per_MT: data.Rate_Per_MT,
+              Rate_Per_MT_Amount: data.Rate_Per_MT_Amount,
               Select_Book: data.Select_Book,
               Transporter: data.Transporter,
               Current_Position: data.Current_Position,
@@ -369,6 +368,7 @@ const MyComponent = () => {
 
   const onChangeShipment = (value) => {
     const shipObj = shipmentObj.filter((record) => record.Shipment === value);
+    console.log(shipObj);
     form.setFieldsValue({
       Shipment: value,
       Commodity: value && shipObj.length > 0 ? shipObj[0].Commodity : "",
@@ -382,19 +382,27 @@ const MyComponent = () => {
         value && shipObj.length > 0
           ? shipObj[0].Destinations.zc_display_value
           : "",
-      Vendor_Bill: value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : "",
+      Vendor_Bill_Amount: value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : "",
       Customer_Name:
         value && shipObj.length > 0 ? shipObj[0].Customer.zc_display_value : "",
       Select_Book:
         value && shipObj.length > 0
           ? shipObj[0].Select_Book.zc_display_value
           : "",
-      Rate_Per_MT: value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : "",
+      Rate_Per_MT_Amount: value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : "",
     });
     setVendorBill(value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : 0);
     setRatePerMt(value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : 0);
-    setConvertedCurrencyValue(() => value && shipObj.length > 0 ? parseFloat(shipObj[0].Vendor_Bill || 0) * parseFloat(currencyValue) : 0);
-    setRatePerMtConverted(() => value && shipObj.length > 0 ? parseFloat(shipObj[0].Rate_Per_MT || 0) * parseFloat(currencyValue) : 0);
+    setConvertedCurrencyValue(() =>
+      value && shipObj.length > 0
+        ? parseFloat(shipObj[0].Vendor_Bill|| 0) * parseFloat(currencyValue)
+        : 0
+    );
+    setRatePerMtConverted(() =>
+      value && shipObj.length > 0
+        ? parseFloat(shipObj[0].Rate_Per_MT || 0) * parseFloat(currencyValue)
+        : 0
+    );
   };
 
   const handleDriverChange = (value) => {
@@ -490,8 +498,10 @@ const MyComponent = () => {
       Approval_Status: "Pending",
       Status: "Not Moved to Tracking",
       Vendor_Credit: `${obj.Vendor_Credit}%`,
-      Vendor_Bill: vendorBill,
-      Rate_Per_MT: ratePerMt,
+      Vendor_Bill_Amount: vendorBill,
+      Rate_Per_MT_Amount: ratePerMt,
+      Vendor_Bill: currencies.find((c) => c.code === baseCurrency).symbol + " " + vendorBill,
+      Rate_Per_MT: currencies.find((c) => c.code === baseCurrency).symbol + " " + ratePerMt,
       Horse_Contact_Person: {
         first_name: contactPersonName,
         last_name: "",
@@ -633,7 +643,7 @@ const MyComponent = () => {
                 <Form.Item
                   label="Vendor Bill"
                   className="w-[250px]"
-                  name="Vendor_Bill"
+                  name="Vendor_Bill_Amount"
                 >
                   <InputNumber
                     addonBefore={currencyDropdown}
@@ -858,7 +868,7 @@ const MyComponent = () => {
                 <Form.Item
                   label="Rate Per MT"
                   className="w-[250px] mb-0"
-                  name="Rate_Per_MT"
+                  name="Rate_Per_MT_Amount"
                 >
                   <InputNumber
                     addonBefore={currencyDropdown}
