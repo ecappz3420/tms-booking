@@ -17,6 +17,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
+import { set } from "rc-util";
 
 const MyComponent = () => {
   const [shipmentObj, setShipmentObj] = useState([]);
@@ -393,6 +394,7 @@ const MyComponent = () => {
     setVendorBill(value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : 0);
     setRatePerMt(value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : 0);
     setConvertedCurrencyValue(() => value && shipObj.length > 0 ? parseFloat(shipObj[0].Vendor_Bill || 0) * parseFloat(currencyValue) : 0);
+    setRatePerMtConverted(() => value && shipObj.length > 0 ? parseFloat(shipObj[0].Rate_Per_MT || 0) * parseFloat(currencyValue) : 0);
   };
 
   const handleDriverChange = (value) => {

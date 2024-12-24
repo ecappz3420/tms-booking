@@ -1,5 +1,3 @@
 {
-  "/page": "app/page.js",
-  "/api/currency/route": "app/api/currency/route.js",
-  "/api/zoho/route": "app/api/zoho/route.js"
+  "/page": "app/page.js"
 }
