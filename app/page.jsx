@@ -535,7 +535,7 @@ const MyComponent = () => {
         setSubmitLoading(false);
         messageApi.destroy();
         submitted("Data added successfully");
-        setTimeout(() => form.resetFields(), 1000);
+        window.location.reload();
       } catch (error) {
         console.log(error);
         submitted("Failed to add data!");
@@ -553,7 +553,7 @@ const MyComponent = () => {
         setSubmitLoading(false);
         messageApi.destroy();
         submitted("Data added successfully");
-        setTimeout(() => form.resetFields(), 1000);
+        window.location.reload();
       } catch (error) {
         console.log(error);
         submitted("Failed to add data!");
