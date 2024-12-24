@@ -17,6 +17,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useSearchParams } from "next/navigation";
 import dayjs from "dayjs";
+import { set } from "rc-util";
 
 const MyComponent = () => {
   const [shipmentObj, setShipmentObj] = useState([]);
@@ -368,7 +369,6 @@ const MyComponent = () => {
 
   const onChangeShipment = (value) => {
     const shipObj = shipmentObj.filter((record) => record.Shipment === value);
-    console.log(shipObj);
     form.setFieldsValue({
       Shipment: value,
       Commodity: value && shipObj.length > 0 ? shipObj[0].Commodity : "",
@@ -517,6 +517,7 @@ const MyComponent = () => {
         " " +
         ratePerMtConverted,
     };
+    console.log(dataObj);
     if (editMode) {
       try {
         const response = await fetch(`/api/updateRecord?id=${bookingId}`, {
@@ -535,7 +536,9 @@ const MyComponent = () => {
         setSubmitLoading(false);
         messageApi.destroy();
         submitted("Data added successfully");
-        window.location.reload();
+        form.resetFields();
+        setConvertedCurrencyValue(0);
+        setRatePerMtConverted(0);
       } catch (error) {
         console.log(error);
         submitted("Failed to add data!");
@@ -553,7 +556,9 @@ const MyComponent = () => {
         setSubmitLoading(false);
         messageApi.destroy();
         submitted("Data added successfully");
-        window.location.reload();
+        form.resetFields();
+        setConvertedCurrencyValue(0);
+        setRatePerMtConverted(0);
       } catch (error) {
         console.log(error);
         submitted("Failed to add data!");
