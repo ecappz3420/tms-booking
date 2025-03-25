@@ -382,20 +382,22 @@ const MyComponent = () => {
         value && shipObj.length > 0
           ? shipObj[0].Destinations.zc_display_value
           : "",
-      Vendor_Bill_Amount: value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : "",
+      Vendor_Bill_Amount:
+        value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : "",
       Customer_Name:
         value && shipObj.length > 0 ? shipObj[0].Customer.zc_display_value : "",
       Select_Book:
         value && shipObj.length > 0
           ? shipObj[0].Select_Book.zc_display_value
           : "",
-      Rate_Per_MT_Amount: value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : "",
+      Rate_Per_MT_Amount:
+        value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : "",
     });
     setVendorBill(value && shipObj.length > 0 ? shipObj[0].Vendor_Bill : 0);
     setRatePerMt(value && shipObj.length > 0 ? shipObj[0].Rate_Per_MT : 0);
     setConvertedCurrencyValue(() =>
       value && shipObj.length > 0
-        ? parseFloat(shipObj[0].Vendor_Bill|| 0) * parseFloat(currencyValue)
+        ? parseFloat(shipObj[0].Vendor_Bill || 0) * parseFloat(currencyValue)
         : 0
     );
     setRatePerMtConverted(() =>
@@ -461,6 +463,10 @@ const MyComponent = () => {
     );
   };
 
+  const onSubmit = async (value) => {
+    messageApi.error("Error Submitting Record!");
+  };
+
   const onFinish = async (obj) => {
     success();
     const shipmentID =
@@ -500,8 +506,14 @@ const MyComponent = () => {
       Vendor_Credit: `${obj.Vendor_Credit}%`,
       Vendor_Bill_Amount: vendorBill,
       Rate_Per_MT_Amount: ratePerMt,
-      Vendor_Bill: currencies.find((c) => c.code === baseCurrency).symbol + " " + vendorBill,
-      Rate_Per_MT: currencies.find((c) => c.code === baseCurrency).symbol + " " + ratePerMt,
+      Vendor_Bill:
+        currencies.find((c) => c.code === baseCurrency).symbol +
+        " " +
+        vendorBill,
+      Rate_Per_MT:
+        currencies.find((c) => c.code === baseCurrency).symbol +
+        " " +
+        ratePerMt,
       Horse_Contact_Person: {
         first_name: contactPersonName,
         last_name: "",
@@ -584,7 +596,7 @@ const MyComponent = () => {
         <div className="inter p-2">
           <Form
             layout="vertical"
-            onFinish={onFinish}
+            onFinish={onSubmit}
             onFinishFailed={onError}
             initialValues={{ remember: true }}
             autoComplete="off"
